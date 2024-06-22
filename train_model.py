@@ -45,15 +45,9 @@ def extract_features(data):
 
 X_features = extract_features(X)
 
-# Print feature extraction results for verification
-print("Extracted Features: ", X_features[:5])
-
 # Normalize the data
 scaler = RobustScaler()
 X_scaled = scaler.fit_transform(X_features)
-
-# Print scaled data for verification
-print("Scaled Features: ", X_scaled[:5])
 
 # Save the fitted scaler
 joblib.dump(scaler, 'scaler.joblib')
@@ -61,9 +55,6 @@ joblib.dump(scaler, 'scaler.joblib')
 # Dimensionality Reduction
 pca = PCA(n_components=10)
 X_pca = pca.fit_transform(X_scaled)
-
-# Print PCA-transformed data for verification
-print("PCA-transformed Features: ", X_pca[:5])
 
 # Save the fitted PCA
 joblib.dump(pca, 'pca.joblib')
@@ -75,23 +66,19 @@ X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, ran
 smote = SMOTE(random_state=42)
 X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
 
-# Verify class balance after SMOTE
-unique, counts = np.unique(y_train_smote, return_counts=True)
-print("Class distribution after SMOTE:", dict(zip(unique, counts)))
-
 # Define class weights to handle class imbalance
-class_weights = {0: 1.0, 1: 1.0, 2: 2.0, 3: 1.0, 4: 1.0}
+class_weights = {0: 1.0, 1: 1.0, 2: 4.0, 3: 1.0, 4: 1.0}
 
-# Define a simple MLP model for tabular data
+# Define a more complex MLP model for tabular data
 def create_mlp(input_shape, num_classes, learning_rate, dropout_rate):
     inputs = Input(shape=input_shape)
-    x = Dense(256, activation="relu")(inputs)
+    x = Dense(512, activation="relu")(inputs)
+    x = BatchNormalization()(x)
+    x = Dropout(dropout_rate)(x)
+    x = Dense(256, activation="relu")(x)
     x = BatchNormalization()(x)
     x = Dropout(dropout_rate)(x)
     x = Dense(128, activation="relu")(x)
-    x = BatchNormalization()(x)
-    x = Dropout(dropout_rate)(x)
-    x = Dense(64, activation="relu")(x)
     x = BatchNormalization()(x)
     x = Dropout(dropout_rate)(x)
     outputs = Dense(num_classes, activation="softmax")(x)
@@ -110,7 +97,7 @@ def objective(trial):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-5)
 
     history = model.fit(X_train_smote, y_train_smote,
-                        epochs=30, batch_size=batch_size, validation_split=0.2,
+                        epochs=50, batch_size=batch_size, validation_split=0.2,
                         class_weight=class_weights,
                         callbacks=[early_stopping, reduce_lr], verbose=0)
 
@@ -128,25 +115,9 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_wei
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-5)
 
 history = model.fit(X_train_smote, y_train_smote,
-                    epochs=30, batch_size=best_params['batch_size'], validation_split=0.2,
+                    epochs=50, batch_size=best_params['batch_size'], validation_split=0.2,
                     class_weight=class_weights,
                     callbacks=[early_stopping, reduce_lr], verbose=1)
 
 # Save the model
 model.save('power_quality_model.h5')
-
-# Evaluate the model
-y_pred = model.predict(X_test)
-y_pred_classes = np.argmax(y_pred, axis=1)
-
-print("Classification Report:")
-print(classification_report(y_test, y_pred_classes))
-
-# Confusion matrix
-conf_matrix = confusion_matrix(y_test, y_pred_classes)
-plt.figure(figsize=(10, 7))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Normal', '3rd harmonic wave', '5th harmonic wave', 'Voltage dip', 'Transient'], yticklabels=['Normal', '3rd harmonic wave', '5th harmonic wave', 'Voltage dip', 'Transient'])
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
-plt.show()
