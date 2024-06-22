@@ -4,17 +4,15 @@ import numpy as np
 
 # Define the function to predict the output class
 def predict_power_quality(mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4, fft5, fft6):
-    # Here you can define your model or logic to predict the class
-    # For simplicity, we use a dummy logic here
-    # Replace this with your actual model
-    if fft1 > 10000:
+    # Simple logic-based prediction
+    if fft1 > 35000 and fft2 > 120000:
+        return 3  # Voltage dip
+    elif fft1 > 10000 and fft3 > 350000:
+        return 2  # 5th harmonic wave
+    elif fft1 > 10000:
         return 1  # 3rd harmonic wave
     elif fft3 > 350000:
-        return 2  # 5th harmonic wave
-    elif mean > 200:
-        return 3  # Voltage dip
-    elif variance > 18000000:
-        return 4  # transient
+        return 4  # Transient
     else:
         return 0  # Normal
 
@@ -58,10 +56,15 @@ if len(values) == 10:
         1: "3rd harmonic wave",
         2: "5th harmonic wave",
         3: "Voltage dip",
-        4: "transient"
+        4: "Transient"
     }
 
     st.write("Predicted Power Quality Condition:")
     st.write(label_mapping[predicted_label])
+
+    # Provide values for checking
+    st.write(f"Predicted Label: {predicted_label}")
+    st.write(f"Mean: {mean}, Variance: {variance}, Skew: {skew}, Kurtosis: {kurtosis}, FFT1: {fft1}, FFT2: {fft2}, FFT3: {fft3}, FFT4: {fft4}, FFT5: {fft5}, FFT6: {fft6}")
+
 else:
     st.write("Please enter 10 values separated by spaces.")
