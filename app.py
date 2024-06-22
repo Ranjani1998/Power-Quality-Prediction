@@ -3,13 +3,13 @@ import pandas as pd
 
 # Define the function to predict the output class
 def predict_power_quality(mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4, fft5, fft6):
-    # Logical conditions for prediction based on sample data characteristics
+    # Logical conditions for prediction based on refined analysis
     if fft1 > 35000 and fft2 > 120000:
         return 3  # Voltage dip
-    elif fft1 > 10000 and fft3 > 350000 and skew > 0 and kurtosis < -1.2:
-        return 1  # 3rd harmonic wave
     elif fft1 > 10000 and fft3 > 350000:
         return 2  # 5th harmonic wave
+    elif fft1 > 10000 and skew > 0 and kurtosis < -1.2:
+        return 1  # 3rd harmonic wave
     elif mean > 200 and variance > 19000000:
         return 4  # Transient
     elif fft3 > 350000:
