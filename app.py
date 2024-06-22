@@ -1,41 +1,67 @@
 import streamlit as st
+import pandas as pd
 import numpy as np
-import tensorflow as tf
-import joblib
 
-# Load the saved model, scaler, and PCA
-model = tf.keras.models.load_model('power_quality_model.h5')
-scaler = joblib.load('scaler.joblib')
-pca = joblib.load('pca.joblib')
+# Define the function to predict the output class
+def predict_power_quality(mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4, fft5, fft6):
+    # Here you can define your model or logic to predict the class
+    # For simplicity, we use a dummy logic here
+    # Replace this with your actual model
+    if fft1 > 10000:
+        return 1  # 3rd harmonic wave
+    elif fft3 > 350000:
+        return 2  # 5th harmonic wave
+    elif mean > 200:
+        return 3  # Voltage dip
+    elif variance > 18000000:
+        return 4  # transient
+    else:
+        return 0  # Normal
 
-# Define the mapping of class indices to categorical values
-class_mapping = {
-    0: "Normal",
-    1: "3rd harmonic wave",
-    2: "5th harmonic wave",
-    3: "Voltage dip",
-    4: "Transient"
-}
-
-# Streamlit app
+# Input form
 st.title("Power Quality Prediction")
+st.write("Enter the values:")
 
-# Input features
-st.header("Input features")
-mean_val = st.number_input("Mean value", value=0.0)
-variance_val = st.number_input("Variance value", value=0.0)
-skew_val = st.number_input("Skew value", value=0.0)
-kurtosis_val = st.number_input("Kurtosis value", value=0.0)
-fft_vals = [st.number_input(f"FFT component {i+1}", value=0.0) for i in range(6)]
+input_values = st.text_input("Input values (separated by spaces):", "78.48 17087176.82 0.0927 -1.2422 10123.58 12483.36 370271.93 9458.98 8836.6 8812.29")
 
-# Prepare input for prediction
-input_data = np.array([mean_val, variance_val, skew_val, kurtosis_val] + fft_vals).reshape(1, -1)
-input_data_scaled = scaler.transform(input_data)
-input_data_pca = pca.transform(input_data_scaled)
+# Convert input values to a list of floats
+values = list(map(float, input_values.split()))
 
-# Prediction
-if st.button("Predict"):
-    prediction = model.predict(input_data_pca)
-    predicted_class = np.argmax(prediction, axis=1)[0]
-    st.write(f"The power quality condition is: {class_mapping[predicted_class]}")
+if len(values) == 10:
+    mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4, fft5, fft6 = values
 
+    # Create a DataFrame to display the input values
+    data = {
+        "Mean Value": [mean],
+        "Variance Value": [variance],
+        "Skew Value": [skew],
+        "Kurtosis Value": [kurtosis],
+        "FFT Component 1": [fft1],
+        "FFT Component 2": [fft2],
+        "FFT Component 3": [fft3],
+        "FFT Component 4": [fft4],
+        "FFT Component 5": [fft5],
+        "FFT Component 6": [fft6]
+    }
+
+    df = pd.DataFrame(data)
+
+    st.write("Input Values:")
+    st.table(df)
+
+    # Predict the output
+    predicted_label = predict_power_quality(mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4, fft5, fft6)
+
+    # Define the mapping of output labels
+    label_mapping = {
+        0: "Normal",
+        1: "3rd harmonic wave",
+        2: "5th harmonic wave",
+        3: "Voltage dip",
+        4: "transient"
+    }
+
+    st.write("Predicted Power Quality Condition:")
+    st.write(label_mapping[predicted_label])
+else:
+    st.write("Please enter 10 values separated by spaces.")
