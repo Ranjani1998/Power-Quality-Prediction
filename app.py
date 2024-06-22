@@ -1,14 +1,10 @@
 import streamlit as st
 import numpy as np
-import joblib
 import tensorflow as tf
-from scipy.stats import skew, kurtosis
-from scipy.fft import fft
+import joblib
 
-# Load the model
+# Load the saved model, scaler, and PCA
 model = tf.keras.models.load_model('power_quality_model.h5')
-
-# Load the fitted scaler and PCA
 scaler = joblib.load('scaler.joblib')
 pca = joblib.load('pca.joblib')
 
@@ -34,24 +30,12 @@ fft_vals = [st.number_input(f"FFT component {i+1}", value=0.0) for i in range(6)
 
 # Prepare input for prediction
 input_data = np.array([mean_val, variance_val, skew_val, kurtosis_val] + fft_vals).reshape(1, -1)
+input_data_scaled = scaler.transform(input_data)
+input_data_pca = pca.transform(input_data_scaled)
 
-# Debugging: Print input data
-st.write("Input data:", input_data)
+# Prediction
+if st.button("Predict"):
+    prediction = model.predict(input_data_pca)
+    predicted_class = np.argmax(prediction, axis=1)[0]
+    st.write(f"The power quality condition is: {class_mapping[predicted_class]}")
 
-# Ensure the input data has the correct number of features
-if input_data.shape[1] != 10:
-    st.error(f"Input data must have 10 features, but has {input_data.shape[1]}")
-else:
-    # Scale and transform the input data
-    input_data_scaled = scaler.transform(input_data)
-    input_data_pca = pca.transform(input_data_scaled)
-
-    # Debugging: Print scaled and PCA-transformed data
-    st.write("Scaled data:", input_data_scaled)
-    st.write("PCA-transformed data:", input_data_pca)
-
-    # Prediction
-    if st.button("Predict"):
-        prediction = model.predict(input_data_pca)
-        predicted_class = np.argmax(prediction, axis=1)[0]
-        st.write(f"The power quality condition is: {class_mapping[predicted_class]}")
