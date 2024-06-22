@@ -19,7 +19,7 @@ def predict_power_quality(mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4
 st.title("Power Quality Prediction")
 st.write("Enter the values:")
 
-input_values = st.text_input("Input values (separated by spaces):")
+input_values = st.text_input("Input values (separated by spaces):", "78.48 17087176.82 0.0927 -1.2422 10123.58 12483.36 370271.93 9458.98 8836.6 8812.29")
 
 # Convert input values to a list of floats
 if input_values:
