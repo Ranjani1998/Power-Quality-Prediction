@@ -4,12 +4,12 @@ import numpy as np
 
 # Define the function to predict the output class
 def predict_power_quality(mean, variance, skew, kurtosis, fft1, fft2, fft3, fft4, fft5, fft6):
-    # Simple logic-based prediction
+    # Logical conditions for prediction based on sample data characteristics
     if fft1 > 35000 and fft2 > 120000:
         return 3  # Voltage dip
     elif fft1 > 10000 and fft3 > 350000:
         return 2  # 5th harmonic wave
-    elif fft1 > 10000:
+    elif fft1 > 10000 and skew > 0 and kurtosis < -1.2:
         return 1  # 3rd harmonic wave
     elif fft3 > 350000:
         return 4  # Transient
